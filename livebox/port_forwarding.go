@@ -62,14 +62,18 @@ func (c *Client) ListPortForwardings() ([]PortForwarding, error) {
 
 	out := make([]PortForwarding, 0, len(pfr))
 	for id, raw := range pfr {
-		externalPort, portRange, err := parsePortRange(raw.ExternalPort)
+		externalPort, externalPortRange, err := parsePortRange(raw.ExternalPort)
 		if err != nil {
 			return nil, fmt.Errorf("parse port range: %w", err)
 		}
 
-		internalPort, err := strconv.Atoi(raw.InternalPort)
+		internalPort, internalPortRange, err := parsePortRange(raw.InternalPort)
 		if err != nil {
 			return nil, fmt.Errorf("parse internal port: %w", err)
+		}
+
+		if externalPortRange != internalPortRange {
+			return nil, fmt.Errorf("Mismatch")
 		}
 
 		pf := PortForwarding{
@@ -77,7 +81,7 @@ func (c *Client) ListPortForwardings() ([]PortForwarding, error) {
 			Protocol:     parseProtocol(raw.Protocol),
 			ExternalPort: externalPort,
 			InternalPort: internalPort,
-			PortRange:    portRange,
+			PortRange:    externalPortRange,
 			Destination:  raw.DestinationIPAddress,
 			Source:       raw.SourcePrefix,
 			Enabled:      raw.Enable,
