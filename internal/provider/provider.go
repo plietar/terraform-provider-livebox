@@ -41,6 +41,9 @@ func (l *Livebox) Schema(_ context.Context, _ provider.SchemaRequest, resp *prov
 				Optional:    true,
 				Description: "URI exposing the Livebox API. May also be provided via LIVEBOX_HOST environment variable.",
 			},
+			"username": schema.StringAttribute{
+				Optional: true,
+			},
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
@@ -52,6 +55,7 @@ func (l *Livebox) Schema(_ context.Context, _ provider.SchemaRequest, resp *prov
 
 type liveboxProviderModel struct {
 	Host     types.String `tfsdk:"host"`
+	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 }
 
@@ -84,6 +88,7 @@ func (l *Livebox) Configure(ctx context.Context, req provider.ConfigureRequest, 
 	}
 
 	host := os.Getenv("LIVEBOX_HOST")
+	username := "admin"
 	password := os.Getenv("LIVEBOX_PASSWORD")
 
 	if !config.Host.IsNull() {
@@ -92,6 +97,10 @@ func (l *Livebox) Configure(ctx context.Context, req provider.ConfigureRequest, 
 
 	if !config.Password.IsNull() {
 		password = config.Password.ValueString()
+	}
+
+	if !config.Username.IsNull() {
+		username = config.Username.ValueString()
 	}
 
 	if host == "" {
@@ -119,12 +128,13 @@ func (l *Livebox) Configure(ctx context.Context, req provider.ConfigureRequest, 
 	}
 
 	ctx = tflog.SetField(ctx, "livebox_host", host)
+	ctx = tflog.SetField(ctx, "livebox_username", username)
 	ctx = tflog.SetField(ctx, "livebox_password", password)
 	ctx = tflog.MaskFieldValuesWithFieldKeys(ctx, "livebox_password")
 
 	tflog.Debug(ctx, "Creating Livebox client")
 
-	client, err := livebox.NewClient(host, password)
+	client, err := livebox.NewClient(host, username, password)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Create Livebox Client",

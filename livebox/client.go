@@ -22,7 +22,7 @@ type Client struct {
 // The host parameter must contain one of the following schemes: http, https.
 // Of course, https is strongly recommended even if the Livebox serves a self-signed certificate,
 // at least the connection will be encrypted.
-func NewClient(host, password string) (*Client, error) {
+func NewClient(host, username, password string) (*Client, error) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err
@@ -40,20 +40,20 @@ func NewClient(host, password string) (*Client, error) {
 		},
 	}
 
-	if err := c.login(password); err != nil {
+	if err := c.login(username, password); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (c *Client) login(password string) error {
+func (c *Client) login(username, password string) error {
 	payload := &apiRequest{
 		Service: "sah.Device.Information",
 		Method:  "createContext",
 		Parameters: map[string]any{
 			"applicationName": "webui",
-			"username":        "admin",
+			"username":        username,
 			"password":        password,
 		},
 	}
